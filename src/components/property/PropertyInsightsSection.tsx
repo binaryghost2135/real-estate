@@ -3,19 +3,20 @@
 
 import type { FC } from 'react';
 import { useState, useTransition } from 'react';
-import { Button } from '@/components/ui/button';
-import { Loader2, Wand2 } from 'lucide-react';
+// Button import removed as it's no longer used
+// Loader2 import removed as it's no longer used
+import { Wand2 } from 'lucide-react'; // Wand2 is used in AlertDialogTitle
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
+  // AlertDialogCancel, // No longer used
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Property } from '@/types'; // Updated import
+import type { Property } from '@/types'; 
 import { generatePropertyInsightsServerAction } from '@/app/actions';
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +30,8 @@ const PropertyInsightsSection: FC<PropertyInsightsSectionProps> = ({ properties 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
+  // This function is no longer triggered by UI elements within this component
+  // after the button's removal.
   const handleGenerateInsights = () => {
     if (properties.length === 0) {
       toast({
@@ -57,22 +60,7 @@ const PropertyInsightsSection: FC<PropertyInsightsSectionProps> = ({ properties 
 
   return (
     <>
-      <div className="my-8 text-center">
-        <Button
-          onClick={handleGenerateInsights}
-          disabled={isPending || properties.length === 0}
-          size="lg"
-          className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-lg transform hover:scale-105 transition-all"
-        >
-          {isPending ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          ) : (
-            <Wand2 className="mr-2 h-5 w-5" />
-          )}
-          Get AI Property Insights
-        </Button>
-        {properties.length === 0 && <p className="text-sm text-muted-foreground mt-2">No properties visible to analyze.</p>}
-      </div>
+      {/* The div className="my-8 text-center" which contained the Button and paragraph has been removed. */}
 
       <AlertDialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <AlertDialogContent className="max-h-[80vh] overflow-y-auto">
