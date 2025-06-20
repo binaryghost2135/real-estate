@@ -2,7 +2,7 @@
 "use client";
 
 import type { FC } from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,12 +28,18 @@ interface EditPropertyModalProps {
 }
 
 // Define a specific type for the form state in EditPropertyModal
-type EditPropertyFormState = Omit<Property, 'id' | 'imageUrls'> & {
-  imageUrlsText: string;
+type EditPropertyFormState = Omit<Property, 'id' | 'imageUrls'>;
+
+const fileToDataUri = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 };
 
 const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubmit, property }) => {
-  // Initialize form state with a defined structure
   const [formState, setFormState] = useState<EditPropertyFormState>({
     name: '',
     type: 'buy',
@@ -43,9 +49,11 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
     bathrooms: 0,
     area: '',
     description: '',
-    imageUrlsText: '',
     dataAiHint: '',
   });
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // For new file selections
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // To display current images
 
   useEffect(() => {
     if (property && isOpen) {
@@ -58,13 +66,29 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
         bathrooms: property.bathrooms,
         area: property.area,
         description: property.description,
-        imageUrlsText: property.imageUrls.join(', '), // Convert array to comma-separated string
         dataAiHint: property.dataAiHint || '',
       });
+      setExistingImageUrls(property.imageUrls);
+      setImagePreviews([]); // Clear new previews when modal reopens with new property
+      setSelectedFiles(null); // Clear selected files
     }
   }, [property, isOpen]);
 
   if (!property) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    setSelectedFiles(files);
+    if (files) {
+      const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
+      // Clean up previous new previews
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      setImagePreviews(newPreviews);
+    } else {
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      setImagePreviews([]);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -78,33 +102,53 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
     setFormState(prev => ({ ...prev, type: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!property) return;
 
-    const updatedProperty: Property = {
-      id: property.id, // Retain the original ID
-      name: formState.name,
-      type: formState.type,
-      address: formState.address,
-      price: formState.price,
-      bedrooms: Number(formState.bedrooms),
-      bathrooms: Number(formState.bathrooms),
-      area: formState.area,
-      description: formState.description,
-      imageUrls: formState.imageUrlsText.split(',').map(url => url.trim()).filter(url => url), // Convert string back to array
-      dataAiHint: formState.dataAiHint,
-    };
-
-    if (updatedProperty.bedrooms < 0 || updatedProperty.bathrooms < 0) {
+    if (formState.bedrooms < 0 || formState.bathrooms < 0) {
         alert("Bedrooms and bathrooms cannot be negative.");
         return;
     }
+
+    let finalImageUrls: string[] = property.imageUrls; // Default to existing
+    if (selectedFiles && selectedFiles.length > 0) {
+      try {
+        finalImageUrls = await Promise.all(Array.from(selectedFiles).map(fileToDataUri));
+      } catch (error) {
+        console.error("Error converting files to Data URIs:", error);
+        alert("Error processing new images. Please try again.");
+        return;
+      }
+    }
+    
+    const updatedProperty: Property = {
+      ...property, // Retain ID and other non-form fields from original property
+      ...formState, // Apply changes from form state
+      bedrooms: Number(formState.bedrooms), // Ensure numbers
+      bathrooms: Number(formState.bathrooms),
+      imageUrls: finalImageUrls, // Use newly processed or existing URLs
+    };
+
     onSubmit(updatedProperty);
+    // Clean up previews after successful submission
+    imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setImagePreviews([]);
+    setSelectedFiles(null);
   };
 
+  const handleCloseModal = () => {
+    onClose();
+    // Clean up previews when modal is closed without submitting
+    imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    setImagePreviews([]);
+    setExistingImageUrls([]);
+    setSelectedFiles(null);
+  };
+
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleCloseModal}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-card-foreground">Edit Property</DialogTitle>
@@ -112,7 +156,7 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
             Update the details for &quot;{property.name}&quot;.
           </DialogDescription>
           <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground" onClick={handleCloseModal}>
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </Button>
@@ -161,17 +205,41 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
               <Label htmlFor="edit-description" className="text-right col-span-1 mt-2">Description</Label>
               <Textarea id="edit-description" name="description" value={formState.description} onChange={handleChange} required className="col-span-3"/>
             </div>
+            
+            {existingImageUrls.length > 0 && (
+                 <div className="grid grid-cols-4 items-start gap-4">
+                    <Label className="text-right col-span-1 mt-2">Current Images</Label>
+                    <div className="col-span-3 grid grid-cols-3 gap-2">
+                    {existingImageUrls.map((url, index) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={`existing-${index}`} src={url} alt={`Existing ${index + 1}`} className="h-20 w-full object-cover rounded-md border" />
+                    ))}
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="edit-imageUrlsText" className="text-right col-span-1 mt-2">Image URLs</Label>
-              <Textarea id="edit-imageUrlsText" name="imageUrlsText" value={formState.imageUrlsText} onChange={handleChange} className="col-span-3" placeholder="Comma-separated URLs"/>
+              <Label htmlFor="edit-images" className="text-right col-span-1 mt-2">Replace Images</Label>
+              <Input id="edit-images" name="images" type="file" multiple accept="image/png, image/jpeg, image/webp, image/gif" onChange={handleFileChange} className="col-span-3" />
             </div>
+            {imagePreviews.length > 0 && (
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right col-span-1 mt-2">New Previews</Label>
+                <div className="col-span-3 grid grid-cols-3 gap-2">
+                  {imagePreviews.map((previewUrl, index) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={`new-preview-${index}`} src={previewUrl} alt={`New Preview ${index + 1}`} className="h-20 w-full object-cover rounded-md border" />
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-dataAiHint" className="text-right col-span-1">Image Hint</Label>
               <Input id="edit-dataAiHint" name="dataAiHint" value={formState.dataAiHint} onChange={handleChange} className="col-span-3" placeholder="e.g., modern apartment (max 2 words)"/>
             </div>
           </div>
           <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={handleCloseModal}>Cancel</Button>
             <Button type="submit">Save Changes</Button>
           </DialogFooter>
         </form>

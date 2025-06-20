@@ -2,7 +2,7 @@
 "use client";
 
 import type { FC } from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -23,10 +23,10 @@ import type { Property } from '@/types';
 interface AddPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (details: Omit<Property, 'id' | 'imageUrls'> & { imageUrlsText: string }) => void;
+  onSubmit: (details: Omit<Property, 'id'>) => void;
 }
 
-const initialFormState = {
+const initialFormState: Omit<Property, 'id' | 'imageUrls'> & { dataAiHint: string } = {
   name: '',
   type: 'buy' as 'buy' | 'rent',
   address: '',
@@ -35,12 +35,33 @@ const initialFormState = {
   bathrooms: 1,
   area: '',
   description: '',
-  imageUrlsText: '', // To handle comma-separated URLs
   dataAiHint: '',
+};
+
+const fileToDataUri = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 };
 
 const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [formState, setFormState] = useState(initialFormState);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    setSelectedFiles(files);
+    if (files) {
+      const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
+      setImagePreviews(newPreviews);
+    } else {
+      setImagePreviews([]);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -51,18 +72,42 @@ const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit
     setFormState(prev => ({ ...prev, type: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formState.bedrooms < 0 || formState.bathrooms < 0) {
-        alert("Bedrooms and bathrooms cannot be negative."); // Simple validation
+        alert("Bedrooms and bathrooms cannot be negative.");
         return;
     }
-    onSubmit(formState);
+
+    let imageUrls: string[] = [];
+    if (selectedFiles) {
+      try {
+        imageUrls = await Promise.all(Array.from(selectedFiles).map(fileToDataUri));
+      } catch (error) {
+        console.error("Error converting files to Data URIs:", error);
+        alert("Error processing images. Please try again.");
+        return;
+      }
+    }
+
+    onSubmit({ ...formState, imageUrls });
     setFormState(initialFormState); // Reset form
+    setSelectedFiles(null);
+    setImagePreviews([]);
+    // Revoke object URLs after submission to free up resources
+    imagePreviews.forEach(url => URL.revokeObjectURL(url));
   };
 
+  const handleCloseModal = () => {
+    onClose();
+    setFormState(initialFormState);
+    setSelectedFiles(null);
+    imagePreviews.forEach(url => URL.revokeObjectURL(url)); // Clean up previews
+    setImagePreviews([]);
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleCloseModal}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-card-foreground">Add New Property</DialogTitle>
@@ -70,7 +115,7 @@ const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit
             Fill in the details for the new property listing.
           </DialogDescription>
           <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground" onClick={handleCloseModal}>
               <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
             </Button>
@@ -120,16 +165,27 @@ const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit
               <Textarea id="description" name="description" value={formState.description} onChange={handleChange} required className="col-span-3" placeholder="Property description..." />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="imageUrlsText" className="text-right col-span-1 mt-2">Image URLs</Label>
-              <Textarea id="imageUrlsText" name="imageUrlsText" value={formState.imageUrlsText} onChange={handleChange} className="col-span-3" placeholder="Comma-separated URLs" />
+              <Label htmlFor="images" className="text-right col-span-1 mt-2">Images</Label>
+              <Input id="images" name="images" type="file" multiple accept="image/png, image/jpeg, image/webp, image/gif" onChange={handleFileChange} className="col-span-3" />
             </div>
+            {imagePreviews.length > 0 && (
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right col-span-1 mt-2">Previews</Label>
+                <div className="col-span-3 grid grid-cols-3 gap-2">
+                  {imagePreviews.map((previewUrl, index) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={index} src={previewUrl} alt={`Preview ${index + 1}`} className="h-20 w-full object-cover rounded-md border" />
+                  ))}
+                </div>
+              </div>
+            )}
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="dataAiHint" className="text-right col-span-1">Image Hint</Label>
               <Input id="dataAiHint" name="dataAiHint" value={formState.dataAiHint} onChange={handleChange} className="col-span-3" placeholder="e.g., modern apartment (max 2 words)" />
             </div>
           </div>
           <DialogFooter className="mt-4">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={handleCloseModal}>Cancel</Button>
             <Button type="submit">Add Property</Button>
           </DialogFooter>
         </form>
