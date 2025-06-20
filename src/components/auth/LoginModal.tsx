@@ -10,12 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+// import { X } from 'lucide-react'; // No longer needed
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -40,12 +39,7 @@ const LoginModal: FC<LoginModalProps> = ({ isOpen, onClose, onSubmit }) => {
           <DialogDescription>
             Enter your admin credentials to access management features.
           </DialogDescription>
-          <DialogClose asChild>
-            <Button variant="ghost" size="icon" className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </Button>
-          </DialogClose>
+          {/* The explicit DialogClose button was here and has been removed */}
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
