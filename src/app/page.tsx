@@ -1,11 +1,8 @@
+
 "use client";
 
-import React, { useState, useEffect, useMemo, useTransition } from 'react';
-import { signInAnonymously, signInWithCustomToken, onAuthStateChanged, type User } from 'firebase/auth';
-import { collection, doc, getDocs, onSnapshot, runTransaction, query, writeBatch, Timestamp } from 'firebase/firestore';
-
-import { auth, db, appId, initialAuthToken, type Property } from '@/lib/firebase';
-import { toggleLikeProperty } from '@/app/actions';
+import React, { useState, useEffect, useMemo } from 'react';
+import type { Property } from '@/types'; // Updated import
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -16,8 +13,7 @@ import SellPropertyModal, { type SellPropertyDetails } from '@/components/proper
 import PropertyInsightsSection from '@/components/property/PropertyInsightsSection';
 import { useToast } from "@/hooks/use-toast";
 
-// --- Mock Data (Only for seeding the database) ---
-// Note: dataAiHint is added to mock properties
+// --- Mock Data ---
 const mockProperties: Property[] = [
     { id: 'p1', type: 'buy', name: 'Spacious 3BHK in Lokhandwala', address: 'Lokhandwala Complex, Kandivali East', price: '₹2.5 Cr', bedrooms: 3, bathrooms: 3, area: '1450 sqft', description: 'Luxurious apartment with modern amenities, prime location, and excellent connectivity. Features include a modular kitchen, designer bathrooms, ample natural light, and a dedicated parking space. The building offers a gymnasium, swimming pool, and 24/7 security.', imageUrls: ['https://images.unsplash.com/photo-1560518883-ff51f816a75f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwxNXx8bXVtYmFpJTIwYXBhcnRtZW50fGVufDB8fHx8MTcwMTkxNjExOXww&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1595512204554-075ac2d6349c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwzfHxhcGFydG1lbnQlMjBpbnRlcmlvcnxlbnwwfHx8fDE3MTE3NDkwMzV8MA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1502005229762-cf1cff7c593e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHw3fHxhcGFydG1lbnQlMjBsaXZpbmclMjByb29tfGVufDB8fHx8MTcxMTc0OTAzNXww&ixlib=rb-4.0.3&q=80&w=1080',], dataAiHint: "modern apartment" },
     { id: 'p2', type: 'rent', name: 'Cozy 2BHK near Akurli Road', address: 'Akurli Road, Kandivali East', price: '₹45,000/month', bedrooms: 2, bathrooms: 2, area: '950 sqft', description: 'A comfortable and well-ventilated apartment ideal for small families. Located in a peaceful neighborhood with easy access to schools, hospitals, and local markets. Comes semi-furnished with wardrobes and kitchen cabinets. Pet-friendly building.', imageUrls: ['https://images.unsplash.com/photo-1576941089067-2cd7367ce870?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHw3fHxzZW1pLWRldGFjaGVkJTIwaG91c2V8ZW58MHx8fHwxNzAxOTQzNDU2fDA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1613576356715-e214d0263303?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwxOHx8Y296eSUyMHJvb218ZW58MHx8fHwxNzExNzQ5MDc4fDA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1550015509-0d196f131a4c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwzMHx8Y296eSUyMGhvbWUlMjBraXRjaGVufGVufDB8fHx8MTcxMTc0OTA3OHww&ixlib=rb-4.0.3&q=80&w=1080',], dataAiHint: "cozy house"},
@@ -29,94 +25,17 @@ const mockProperties: Property[] = [
 
 
 export default function HomePage() {
-    const [user, setUser] = useState<User | null>(null);
-    const [allProperties, setAllProperties] = useState<Property[]>([]);
+    const [allProperties, setAllProperties] = useState<Property[]>(mockProperties);
     const [likedPropertyIds, setLikedPropertyIds] = useState<string[]>([]);
     const [filterType, setFilterType] = useState<'buy' | 'rent' | 'favorites'>('buy');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false); // No complex loading initially
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
-    const [isPendingLike, startTransitionLike] = useTransition();
     const { toast } = useToast();
 
-    // --- Firebase Auth & Data Seeding Effect ---
-    useEffect(() => {
-        const authAndSeed = async () => {
-            try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
-                onAuthStateChanged(auth, async (currentUser) => {
-                    if (currentUser) {
-                        setUser(currentUser);
-                        const propertiesCollectionRef = collection(db, `artifacts/${appId}/public/data/properties`);
-                        const q = query(propertiesCollectionRef);
-                        const querySnapshot = await getDocs(q);
-
-                        if (querySnapshot.empty) {
-                            console.log("Properties collection is empty. Seeding data...");
-                            const batch = writeBatch(db);
-                            mockProperties.forEach((prop) => {
-                                const docRef = doc(propertiesCollectionRef, prop.id);
-                                batch.set(docRef, { ...prop, createdAt: Timestamp.now() });
-                            });
-                            await batch.commit();
-                            console.log("Seeding complete.");
-                        }
-                    } else {
-                       setUser(null);
-                    }
-                });
-            } catch (error) {
-                console.error("Error during auth or seeding:", error);
-                toast({ title: "Authentication Error", description: "Could not sign in or seed data.", variant: "destructive" });
-            }
-        };
-        authAndSeed();
-    }, [toast]); // appId removed as it's from firebase.ts
-
-    // --- Firestore Data Fetching Effect ---
-    useEffect(() => {
-        if (!user) {
-            setIsLoading(false);
-            setAllProperties([]);
-            setLikedPropertyIds([]);
-            return;
-        }
-        setIsLoading(true);
-
-        const propertiesCollectionRef = collection(db, `artifacts/${appId}/public/data/properties`);
-        const unsubscribeProperties = onSnapshot(propertiesCollectionRef, (snapshot) => {
-            const props = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
-            setAllProperties(props);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching properties:", error);
-            toast({ title: "Data Fetch Error", description: "Could not load properties.", variant: "destructive" });
-            setIsLoading(false);
-        });
-
-        const likesDocRef = doc(db, `artifacts/${appId}/users/${user.uid}/favorites/likedProperties`);
-        const unsubscribeLikes = onSnapshot(likesDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                setLikedPropertyIds(docSnap.data().ids || []);
-            } else {
-                setLikedPropertyIds([]);
-            }
-        }, (error) => {
-            console.error("Error fetching likes:", error);
-            toast({ title: "Data Fetch Error", description: "Could not load liked properties.", variant: "destructive" });
-        });
-        
-        return () => {
-            unsubscribeProperties();
-            unsubscribeLikes();
-        };
-    }, [user, toast]); // appId removed
+    // Firebase Auth & Data Seeding Effect removed
+    // Firestore Data Fetching Effect removed
 
     // --- Memoized Filtering Logic ---
     const filteredProperties = useMemo(() => {
@@ -141,19 +60,15 @@ export default function HomePage() {
     const handlePropertyClick = (property: Property) => setSelectedProperty(property);
     const handleBackToListings = () => setSelectedProperty(null);
     
-    const handleLike = async (propertyId: string) => {
-        if (!user) {
-            toast({ title: "Login Required", description: "You must be logged in to like properties.", variant: "destructive" });
-            return;
+    const handleLike = (propertyId: string) => {
+        const isCurrentlyLiked = likedPropertyIds.includes(propertyId);
+        if (isCurrentlyLiked) {
+            setLikedPropertyIds(prevLikedIds => prevLikedIds.filter(id => id !== propertyId));
+            toast({ title: "Removed from Favorites", variant: "default" });
+        } else {
+            setLikedPropertyIds(prevLikedIds => [...prevLikedIds, propertyId]);
+            toast({ title: "Added to Favorites", variant: "default" });
         }
-        startTransitionLike(async () => {
-            const result = await toggleLikeProperty(user.uid, propertyId);
-            if (result.success) {
-                 toast({ title: result.isLiked ? "Added to Favorites" : "Removed from Favorites", variant: "default" });
-            } else {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
-            }
-        });
     };
     
     const handleNavigation = (filter: 'buy' | 'rent' | 'favorites') => {
@@ -206,7 +121,7 @@ Details:
                            onPropertyClick={handlePropertyClick}
                            onLike={handleLike}
                            likedIds={likedPropertyIds}
-                           isLoading={isLoading || isPendingLike}
+                           isLoading={isLoading}
                         />
                         <PropertyInsightsSection properties={filteredProperties} />
                     </section>

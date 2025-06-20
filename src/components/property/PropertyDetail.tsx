@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from 'react';
@@ -6,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, MapPin, BedDouble, Bath, Square as SquareIcon } from 'lucide-react';
-import type { Property } from '@/lib/firebase';
+import type { Property } from '@/types'; // Updated import
 
 interface PropertyDetailProps {
   property: Property | null;

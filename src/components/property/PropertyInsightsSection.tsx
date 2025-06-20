@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from 'react';
@@ -14,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Property } from '@/lib/firebase';
+import type { Property } from '@/types'; // Updated import
 import { generatePropertyInsightsServerAction } from '@/app/actions';
 import { useToast } from "@/hooks/use-toast";
 

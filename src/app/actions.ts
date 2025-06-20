@@ -1,44 +1,11 @@
+
 "use server";
 
-import { revalidatePath } from 'next/cache';
-import { db, appId as firebaseAppId, type Property } from '@/lib/firebase'; // Ensure Property type is imported
-import { doc, runTransaction, getDoc, setDoc } from 'firebase/firestore';
+import type { Property } from '@/types'; // Updated import
 import { generatePropertyInsights as getAIInsights, type PropertyInsightsInput, type PropertyInsightsOutput } from '@/ai/flows/property-insights';
 
-export async function toggleLikeProperty(userId: string, propertyId: string): Promise<{ success: boolean; isLiked: boolean; error?: string }> {
-  if (!userId) {
-    return { success: false, isLiked: false, error: "User not authenticated." };
-  }
-
-  const likesDocRef = doc(db, `artifacts/${firebaseAppId}/users/${userId}/favorites/likedProperties`);
-  let finalIsLiked = false;
-
-  try {
-    await runTransaction(db, async (transaction) => {
-      const sfDoc = await transaction.get(likesDocRef);
-      let currentLikes: string[] = [];
-      if (sfDoc.exists()) {
-        currentLikes = sfDoc.data()?.ids || [];
-      }
-      
-      let newLikes: string[];
-      if (currentLikes.includes(propertyId)) {
-        newLikes = currentLikes.filter(id => id !== propertyId); // Unlike
-        finalIsLiked = false;
-      } else {
-        newLikes = [...currentLikes, propertyId]; // Like
-        finalIsLiked = true;
-      }
-      transaction.set(likesDocRef, { ids: newLikes }, { merge: !sfDoc.exists() }); // Use set with merge true if doc might not exist
-    });
-    revalidatePath('/'); // Revalidate the page to reflect changes
-    return { success: true, isLiked: finalIsLiked };
-  } catch (error) {
-    console.error("Transaction failed: ", error);
-    return { success: false, isLiked: false, error: "Failed to update like status." };
-  }
-}
-
+// toggleLikeProperty function has been removed as Firebase Firestore is no longer used.
+// Like functionality will be handled client-side in page.tsx.
 
 export async function generatePropertyInsightsServerAction(properties: Property[]): Promise<PropertyInsightsOutput | { error: string }> {
   if (!properties || properties.length === 0) {

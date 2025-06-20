@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from 'react';
@@ -5,7 +6,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, MapPin, BedDouble, Bath, Square as SquareIcon } from 'lucide-react'; // Renamed Square to SquareIcon to avoid conflict
-import type { Property } from '@/lib/firebase';
+import type { Property } from '@/types'; // Updated import
 
 interface PropertyCardProps {
   property: Property;

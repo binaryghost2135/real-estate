@@ -1,8 +1,9 @@
+
 "use client";
 
 import type { FC } from 'react';
 import PropertyCard from './PropertyCard';
-import type { Property } from '@/lib/firebase';
+import type { Property } from '@/types'; // Updated import
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface PropertyListProps {
