@@ -26,7 +26,7 @@ interface AddPropertyModalProps {
   onSubmit: (details: Omit<Property, 'id'>) => void;
 }
 
-const initialFormState: Omit<Property, 'id' | 'imageUrls'> & { dataAiHint: string } = {
+const initialFormState: Omit<Property, 'id' | 'imageUrls'> & { imageUrls: string; dataAiHint: string } = {
   name: '',
   type: 'buy' as 'buy' | 'rent',
   address: '',
@@ -35,33 +35,12 @@ const initialFormState: Omit<Property, 'id' | 'imageUrls'> & { dataAiHint: strin
   bathrooms: 1,
   area: '',
   description: '',
+  imageUrls: '',
   dataAiHint: '',
-};
-
-const fileToDataUri = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 };
 
 const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [formState, setFormState] = useState(initialFormState);
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    setSelectedFiles(files);
-    if (files) {
-      const newPreviews = Array.from(files).map(file => URL.createObjectURL(file));
-      setImagePreviews(newPreviews);
-    } else {
-      setImagePreviews([]);
-    }
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -79,31 +58,16 @@ const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit
         return;
     }
 
-    let imageUrls: string[] = [];
-    if (selectedFiles) {
-      try {
-        imageUrls = await Promise.all(Array.from(selectedFiles).map(fileToDataUri));
-      } catch (error) {
-        console.error("Error converting files to Data URIs:", error);
-        alert("Error processing images. Please try again.");
-        return;
-      }
-    }
+    const imageUrls = formState.imageUrls.split(',').map(url => url.trim()).filter(url => url);
+    const { imageUrls: _, ...restOfForm } = formState; // exclude the string version
 
-    onSubmit({ ...formState, imageUrls });
+    onSubmit({ ...restOfForm, imageUrls });
     setFormState(initialFormState); // Reset form
-    setSelectedFiles(null);
-    setImagePreviews([]);
-    // Revoke object URLs after submission to free up resources
-    imagePreviews.forEach(url => URL.revokeObjectURL(url));
   };
 
   const handleCloseModal = () => {
     onClose();
     setFormState(initialFormState);
-    setSelectedFiles(null);
-    imagePreviews.forEach(url => URL.revokeObjectURL(url)); // Clean up previews
-    setImagePreviews([]);
   }
 
   return (
@@ -165,20 +129,16 @@ const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit
               <Textarea id="description" name="description" value={formState.description} onChange={handleChange} required className="col-span-3" placeholder="Property description..." />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="images" className="text-right col-span-1 mt-2">Images</Label>
-              <Input id="images" name="images" type="file" multiple accept="image/png, image/jpeg, image/webp, image/gif" onChange={handleFileChange} className="col-span-3" />
+              <Label htmlFor="imageUrls" className="text-right col-span-1 mt-2">Image URLs</Label>
+              <Textarea
+                id="imageUrls"
+                name="imageUrls"
+                value={formState.imageUrls}
+                onChange={handleChange}
+                className="col-span-3"
+                placeholder="Enter image URLs, separated by commas"
+              />
             </div>
-            {imagePreviews.length > 0 && (
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right col-span-1 mt-2">Previews</Label>
-                <div className="col-span-3 grid grid-cols-3 gap-2">
-                  {imagePreviews.map((previewUrl, index) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img key={index} src={previewUrl} alt={`Preview ${index + 1}`} className="h-20 w-full object-cover rounded-md border" />
-                  ))}
-                </div>
-              </div>
-            )}
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="dataAiHint" className="text-right col-span-1">Image Hint</Label>
               <Input id="dataAiHint" name="dataAiHint" value={formState.dataAiHint} onChange={handleChange} className="col-span-3" placeholder="e.g., modern apartment (max 2 words)" />

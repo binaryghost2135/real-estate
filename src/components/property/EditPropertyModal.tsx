@@ -17,9 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { X, Trash2, RotateCcw } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { Property } from '@/types';
-import Image from 'next/image';
 
 interface EditPropertyModalProps {
   isOpen: boolean;
@@ -28,23 +27,7 @@ interface EditPropertyModalProps {
   property: Property | null;
 }
 
-type EditPropertyFormState = Omit<Property, 'id' | 'imageUrls'>;
-
-interface ManagedImage {
-  url: string;
-  isMarkedForDeletion: boolean;
-  isNewlyUploaded?: boolean; // To differentiate between existing and just added for preview
-  file?: File; // For newly uploaded files before conversion
-}
-
-const fileToDataUri = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
+type EditPropertyFormState = Omit<Property, 'id' | 'imageUrls'> & { imageUrls: string };
 
 const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubmit, property }) => {
   const [formState, setFormState] = useState<EditPropertyFormState>({
@@ -57,12 +40,8 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
     area: '',
     description: '',
     dataAiHint: '',
+    imageUrls: '',
   });
-  
-  const [managedImages, setManagedImages] = useState<ManagedImage[]>([]);
-  const [newImageFiles, setNewImageFiles] = useState<FileList | null>(null);
-  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
-
 
   useEffect(() => {
     if (property && isOpen) {
@@ -76,35 +55,12 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
         area: property.area,
         description: property.description,
         dataAiHint: property.dataAiHint || '',
+        imageUrls: property.imageUrls.join(', '),
       });
-      setManagedImages(property.imageUrls.map(url => ({ url, isMarkedForDeletion: false })));
-      setNewImageFiles(null);
-      setNewImagePreviews([]); // Clear new previews when modal reopens
     }
   }, [property, isOpen]);
 
   if (!property) return null;
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    setNewImageFiles(files);
-    if (files) {
-      const currentPreviews = Array.from(files).map(file => URL.createObjectURL(file));
-      newImagePreviews.forEach(url => URL.revokeObjectURL(url)); // Clean up old new previews
-      setNewImagePreviews(currentPreviews);
-    } else {
-      newImagePreviews.forEach(url => URL.revokeObjectURL(url));
-      setNewImagePreviews([]);
-    }
-  };
-
-  const toggleDeleteImage = (index: number) => {
-    setManagedImages(prev => 
-      prev.map((img, i) => 
-        i === index ? { ...img, isMarkedForDeletion: !img.isMarkedForDeletion } : img
-      )
-    );
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -127,41 +83,23 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
         return;
     }
 
-    let finalImageUrls: string[] = managedImages
-      .filter(img => !img.isMarkedForDeletion)
-      .map(img => img.url);
+    const finalImageUrls = formState.imageUrls.split(',').map(url => url.trim()).filter(url => url);
 
-    if (newImageFiles && newImageFiles.length > 0) {
-      try {
-        const newDataUris = await Promise.all(Array.from(newImageFiles).map(fileToDataUri));
-        finalImageUrls = [...finalImageUrls, ...newDataUris];
-      } catch (error) {
-        console.error("Error converting new files to Data URIs:", error);
-        alert("Error processing new images. Please try again.");
-        return;
-      }
-    }
-    
+    const { imageUrls: _, ...restOfForm } = formState;
+
     const updatedProperty: Property = {
       ...property,
-      ...formState,
+      ...restOfForm,
       bedrooms: Number(formState.bedrooms),
       bathrooms: Number(formState.bathrooms),
       imageUrls: finalImageUrls,
     };
 
     onSubmit(updatedProperty);
-    newImagePreviews.forEach(url => URL.revokeObjectURL(url)); // Clean up previews
-    setNewImagePreviews([]);
-    setNewImageFiles(null);
   };
 
   const handleCloseModal = () => {
     onClose();
-    newImagePreviews.forEach(url => URL.revokeObjectURL(url));
-    setNewImagePreviews([]);
-    setManagedImages([]);
-    setNewImageFiles(null);
   };
 
 
@@ -225,59 +163,19 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
               <Textarea id="edit-description" name="description" value={formState.description} onChange={handleChange} required className="col-span-3"/>
             </div>
             
-            {/* Current Images Section */}
-            {managedImages.length > 0 && (
-                 <div className="grid grid-cols-1 gap-2 mt-4">
-                    <Label className="col-span-full font-medium">Current Images</Label>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {managedImages.map((image, index) => (
-                        <div key={`current-${index}`} className="relative group">
-                           <Image 
-                                src={image.url} 
-                                alt={`Current image ${index + 1}`} 
-                                width={100} 
-                                height={75} 
-                                className={`w-full h-20 object-cover rounded-md border ${image.isMarkedForDeletion ? 'opacity-50 ring-2 ring-destructive' : ''}`}
-                                onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/100x75.png'; }}
-                            />
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                size="icon"
-                                className={`absolute top-1 right-1 h-6 w-6 p-1 z-10 ${image.isMarkedForDeletion ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-red-600 hover:bg-red-700'}`}
-                                onClick={() => toggleDeleteImage(index)}
-                                title={image.isMarkedForDeletion ? "Undo Delete" : "Delete Image"}
-                            >
-                                {image.isMarkedForDeletion ? <RotateCcw className="h-3 w-3" /> : <Trash2 className="h-3 w-3" />}
-                            </Button>
-                        </div>
-                    ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Add New Images Section */}
-            <div className="grid grid-cols-4 items-start gap-4 mt-4">
-              <Label htmlFor="edit-new-images" className="text-right col-span-1 mt-2">Add New Images</Label>
-              <Input id="edit-new-images" name="newImages" type="file" multiple accept="image/png, image/jpeg, image/webp, image/gif" onChange={handleFileChange} className="col-span-3" />
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-imageUrls" className="text-right col-span-1 mt-2">Image URLs</Label>
+              <Textarea
+                  id="edit-imageUrls"
+                  name="imageUrls"
+                  value={formState.imageUrls}
+                  onChange={handleChange}
+                  className="col-span-3"
+                  placeholder="Enter image URLs, separated by commas"
+                  rows={4}
+              />
             </div>
-            {newImagePreviews.length > 0 && (
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right col-span-1 mt-2">New Previews</Label>
-                <div className="col-span-3 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {newImagePreviews.map((previewUrl, index) => (
-                    <Image 
-                        key={`new-preview-${index}`} 
-                        src={previewUrl} 
-                        alt={`New Preview ${index + 1}`} 
-                        width={100} 
-                        height={75} 
-                        className="h-20 w-full object-cover rounded-md border" 
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-dataAiHint" className="text-right col-span-1">Image Hint</Label>
               <Input id="edit-dataAiHint" name="dataAiHint" value={formState.dataAiHint} onChange={handleChange} className="col-span-3" placeholder="e.g., modern apartment (max 2 words)"/>
@@ -294,6 +192,3 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
 };
 
 export default EditPropertyModal;
-    
-
-    
