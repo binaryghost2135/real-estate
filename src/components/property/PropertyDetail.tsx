@@ -28,7 +28,7 @@ const PropertyDetail: FC<PropertyDetailProps> = ({ property, onBack }) => {
 
   const handleContactAgent = () => {
     const message = `Hi, I'm interested in the property '${name}' listed at '${price}'. Please provide more details.`;
-    const whatsappUrl = `https://wa.me/91999575955?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/919899575955?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
