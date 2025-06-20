@@ -19,7 +19,7 @@ const Footer: FC<FooterProps> = ({ onOpenLoginModal }) => {
         </div>
         <div>
           <button onClick={onOpenLoginModal} className="hover:text-primary transition duration-300 text-sm">
-            Admin Login
+            Plus
           </button>
         </div>
       </div>
