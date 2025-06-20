@@ -5,23 +5,36 @@ import type { FC } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, MapPin, BedDouble, Bath, Square as SquareIcon } from 'lucide-react'; // Renamed Square to SquareIcon to avoid conflict
-import type { Property } from '@/types'; // Updated import
+import { Heart, MapPin, BedDouble, Bath, Square as SquareIcon, Pencil, Trash2 } from 'lucide-react';
+import type { Property } from '@/types';
 
 interface PropertyCardProps {
   property: Property;
   onClick: (property: Property) => void;
   onLike: (propertyId: string) => void;
   isLiked: boolean;
+  isAdminLoggedIn?: boolean;
+  onEdit?: (property: Property) => void;
+  onDelete?: (propertyId: string) => void;
 }
 
-const PropertyCard: FC<PropertyCardProps> = ({ property, onClick, onLike, isLiked }) => {
+const PropertyCard: FC<PropertyCardProps> = ({ property, onClick, onLike, isLiked, isAdminLoggedIn, onEdit, onDelete }) => {
   const { id, name, address, price, bedrooms, bathrooms, area, imageUrls, dataAiHint } = property;
   const displayImageUrl = imageUrls?.[0] || `https://placehold.co/600x400.png`;
 
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onLike(id);
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.(property);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.(id);
   };
 
   return (
@@ -39,10 +52,8 @@ const PropertyCard: FC<PropertyCardProps> = ({ property, onClick, onLike, isLike
           className="group-hover:scale-105 transition-transform duration-300"
           data-ai-hint={dataAiHint || 'property image'}
           onError={(e) => {
-            // In Next.js 13+ onError on next/image doesn't directly allow src change.
-            // A state variable would be needed for robust fallback. For now, rely on placeholder.
             (e.target as HTMLImageElement).src = `https://placehold.co/600x400.png`;
-             (e.target as HTMLImageElement).srcset = ""; // clear srcset if it exists
+            (e.target as HTMLImageElement).srcset = "";
           }}
         />
         <Button
@@ -69,6 +80,18 @@ const PropertyCard: FC<PropertyCardProps> = ({ property, onClick, onLike, isLike
           <div className="flex items-center space-x-1.5"><BedDouble className="w-4 h-4 sm:w-5 sm:h-5" /> <span>{bedrooms} Beds</span></div>
           <div className="flex items-center space-x-1.5"><Bath className="w-4 h-4 sm:w-5 sm:h-5" /> <span>{bathrooms} Baths</span></div>
           <div className="flex items-center space-x-1.5"><SquareIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span>{area}</span></div>
+          {isAdminLoggedIn && onEdit && onDelete && (
+            <div className="flex items-center space-x-2 mt-2 sm:mt-0 ml-auto">
+              <Button variant="outline" size="icon" onClick={handleEditClick} className="h-7 w-7 sm:h-8 sm:w-8">
+                <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="sr-only">Edit</span>
+              </Button>
+              <Button variant="destructive" size="icon" onClick={handleDeleteClick} className="h-7 w-7 sm:h-8 sm:w-8">
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="sr-only">Delete</span>
+              </Button>
+            </div>
+          )}
         </div>
       </CardFooter>
     </Card>

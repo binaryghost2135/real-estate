@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Property } from '@/types'; // Updated import
+import type { Property } from '@/types'; 
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -11,11 +11,14 @@ import PropertyDetail from '@/components/property/PropertyDetail';
 import FilterBar from '@/components/property/FilterBar';
 import SellPropertyModal, { type SellPropertyDetails } from '@/components/property/SellPropertyModal';
 import PropertyInsightsSection from '@/components/property/PropertyInsightsSection';
+import LoginModal from '@/components/auth/LoginModal';
+import AddPropertyModal from '@/components/property/AddPropertyModal';
+import EditPropertyModal from '@/components/property/EditPropertyModal';
 import { useToast } from "@/hooks/use-toast";
 
 // --- Mock Data ---
 const mockProperties: Property[] = [
-    { id: 'p1', type: 'buy', name: 'Spacious 3BHK in Lokhandwala', address: 'Lokhandwala Complex, Kandivali East', price: '₹2.5 Cr', bedrooms: 3, bathrooms: 3, area: '1450 sqft', description: 'Luxurious apartment with modern amenities, prime location, and excellent connectivity. Features include a modular kitchen, designer bathrooms, ample natural light, and a dedicated parking space. The building offers a gymnasium, swimming pool, and 24/7 security.', imageUrls: ['https://images.unsplash.com/photo-1512917774080-9991f1c4c750?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNXx8aG9tZXxlbnwwfHx8fDE3NTA0MTE5MTd8MA&ixlib=rb-4.1.0&q=80&w=1080', 'https://images.unsplash.com/photo-1604014237800-1c9102c219da?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bW9kZXJuJTIwYXBhcnRtZW50fGVufDB8fHx8MTY4MzczNTY2N3ww&ixlib=rb-4.0.3&q=80&fm=jpg&fit=max&w=1080&h=720', 'https://images.unsplash.com/photo-1613977257363-27551571597a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBiZWRyb29tfGVufDB8fHx8MTc1MDQxMzU4MXww&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1600585152915-d208bec867a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBpbnRlcmlvcnxlbnwwfHx8fDE3NTA0MTM4MDF8MA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBsaXZpbmclMjByb29tfGVufDB8fHx8fDE3NTA0MTM4MDF8MA&ixlib=rb-4.0.3&q=80&w=1080'], dataAiHint: "modern apartment" },
+    { id: 'p1', type: 'buy', name: 'Spacious 3BHK in Lokhandwala', address: 'Lokhandwala Complex, Kandivali East', price: '₹2.5 Cr', bedrooms: 3, bathrooms: 3, area: '1450 sqft', description: 'Luxurious apartment with modern amenities, prime location, and excellent connectivity. Features include a modular kitchen, designer bathrooms, ample natural light, and a dedicated parking space. The building offers a gymnasium, swimming pool, and 24/7 security.', imageUrls: ['https://images.unsplash.com/photo-1512917774080-9991f1c4c750?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNXx8aG9tZXxlbnwwfHx8fDE3NTA0MTE5MTd8MA&ixlib=rb-4.1.0&q=80&w=1080', 'https://images.unsplash.com/photo-1600585152915-d208bec867a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBpbnRlcmlvcnxlbnwwfHx8fDE3NTA0MTM4MDF8MA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBsaXZpbmclMjByb29tfGVufDB8fHx8fDE3NTA0MTM4MDF8MA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1613977257363-27551571597a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBiZWRyb29tfGVufDB8fHx8MTc1MDQxMzU4MXww&ixlib=rb-4.0.3&q=80&w=1080'], dataAiHint: "modern apartment" },
     { id: 'p2', type: 'rent', name: 'Cozy 2BHK near Akurli Road', address: 'Akurli Road, Kandivali East', price: '₹45,000/month', bedrooms: 2, bathrooms: 2, area: '950 sqft', description: 'A comfortable and well-ventilated apartment ideal for small families. Located in a peaceful neighborhood with easy access to schools, hospitals, and local markets. Comes semi-furnished with wardrobes and kitchen cabinets. Pet-friendly building.', imageUrls: ['https://images.unsplash.com/photo-1576941089067-2cd7367ce870?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHw3fHxzZW1pLWRldGFjaGVkJTIwaG91c2V8ZW58MHx8fHwxNzAxOTQzNDU2fDA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1613576356715-e214d0263303?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwxOHx8Y296eSUyMHJvb218ZW58MHx8fHwxNzExNzQ5MDc4fDA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1550015509-0d196f131a4c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwzMHx8Y296eSUyMGhvbWUlMjBraXRjaGVufGVufDB8fHx8MTcxMTc0OTA3OHww&ixlib=rb-4.0.3&q=80&w=1080',], dataAiHint: "cozy house"},
     { id: 'p3', type: 'buy', name: 'Premium 4BHK Penthouse', address: 'Poisar, Kandivali West', price: '₹4.2 Cr', bedrooms: 4, bathrooms: 4, area: '2500 sqft', description: 'An exquisite penthouse offering unparalleled luxury and breathtaking city views. Features a private terrace, Jacuzzi, smart home automation, and access to exclusive rooftop amenities. Perfect for those seeking an opulent lifestyle.', imageUrls: ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHw5fHxtb2Rlcm4lMjBob3VzZXxlbnwwfHx8fDE3MDE5NDM0NTZ8MA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1582063717204-c11cc28f73e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwzNXx8bHV4dXJ5JTIwaG9tZXxlbnwwfHx8fDE3MTE3NDk1MTl8MA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1588725807985-7977a4198263?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwxOXx8bHV4dXJ5JTIwcm9vbXxlbnwwfHx8fDE3MTE3NDk1MTl8MA&ixlib=rb-4.0.3&q=80&w=1080',], dataAiHint: "luxury penthouse"},
     { id: 'p4', type: 'rent', name: 'Studio Apartment, Link Road', address: 'Link Road, Kandivali West', price: '₹22,000/month', bedrooms: 1, bathrooms: 1, area: '400 sqft', description: 'A compact and efficiently designed studio apartment in a highly accessible location. Ideal for singles or working professionals. Close to public transport and entertainment hubs. Includes a compact kitchenette and attached bathroom.', imageUrls: ['https://images.unsplash.com/photo-1549517045-bc93de06f52e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwyMHx8c3R1ZGlvJTIwYXBhdHJtZW50fGVufDB8fHx8MTcwMTk0MzQ1Nnw&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1628108427909-51a8f9b9a67a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHwzMXx8c21hbGwlMjBhcGFydG1lbnR8ZW58MHx8fHwxNzExNzQ5NTg0fDA&ixlib=rb-4.0.3&q=80&w=1080', 'https://images.unsplash.com/photo-1605342930722-e42253303c74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w1NzM4MTN8MHwxfHNlYXJjaHw2MHx8c21hbGwlMjBraXRjaGVufGVufDB8fHx8MTcxMTc0OTU4NHww&ixlib=rb-4.0.3&q=80&w=1080',], dataAiHint: "studio apartment" },
@@ -30,75 +33,137 @@ export default function HomePage() {
     const [filterType, setFilterType] = useState<'buy' | 'rent' | 'favorites'>('buy');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-    const [isLoading, setIsLoading] = useState(false); // No complex loading initially
+    const [isLoading, setIsLoading] = useState(false);
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
     const { toast } = useToast();
 
-    // Firebase Auth & Data Seeding Effect removed
-    // Firestore Data Fetching Effect removed
+    // Admin State
+    const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
+    const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false);
+    const [propertyToEdit, setPropertyToEdit] = useState<Property | null>(null);
 
-    // --- Memoized Filtering Logic ---
     const filteredProperties = useMemo(() => {
         const lowerCaseSearchTerm = searchTerm.toLowerCase();
-
         return allProperties.filter(p => {
             const matchesSearch = !lowerCaseSearchTerm ||
                 p.name.toLowerCase().includes(lowerCaseSearchTerm) ||
                 p.address.toLowerCase().includes(lowerCaseSearchTerm) ||
                 p.description.toLowerCase().includes(lowerCaseSearchTerm);
-            
             if (!matchesSearch) return false;
-
-            if (filterType === 'favorites') {
-                return likedPropertyIds.includes(p.id);
-            }
+            if (filterType === 'favorites') return likedPropertyIds.includes(p.id);
             return p.type === filterType;
         });
     }, [allProperties, filterType, searchTerm, likedPropertyIds]);
 
-    // --- Event Handlers ---
     const handlePropertyClick = (property: Property) => setSelectedProperty(property);
     const handleBackToListings = () => setSelectedProperty(null);
     
     const handleLike = (propertyId: string) => {
-        const isCurrentlyLiked = likedPropertyIds.includes(propertyId);
-        if (isCurrentlyLiked) {
-            setLikedPropertyIds(prevLikedIds => prevLikedIds.filter(id => id !== propertyId));
-            toast({ title: "Removed from Favorites", variant: "default" });
-        } else {
-            setLikedPropertyIds(prevLikedIds => [...prevLikedIds, propertyId]);
-            toast({ title: "Added to Favorites", variant: "default" });
-        }
+        setLikedPropertyIds(prev => prev.includes(propertyId) ? prev.filter(id => id !== propertyId) : [...prev, propertyId]);
+        toast({ title: likedPropertyIds.includes(propertyId) ? "Removed from Favorites" : "Added to Favorites", variant: "default" });
     };
     
     const handleNavigation = (filter: 'buy' | 'rent' | 'favorites') => {
         setFilterType(filter);
-        setSelectedProperty(null); // Go back to list view when filter changes
+        setSelectedProperty(null);
     };
 
     const handleSellSubmit = (details: SellPropertyDetails) => {
-        const { propertyType, location, price, contact } = details;
-        const message = `Hi, I want to list my property for sale.
-Details:
-- Property Type: ${propertyType}
-- Location: ${location}
-- Expected Price: ${price}
-- Contact: ${contact}`;
-        
-        const whatsappUrl = `https://wa.me/919899575955?text=${encodeURIComponent(message)}`; // Replace with actual agent number if needed
+        const message = `Hi, I want to list my property for sale. Details: - Property Type: ${details.propertyType} - Location: ${details.location} - Expected Price: ${details.price} - Contact: ${details.contact}`;
+        const whatsappUrl = `https://wa.me/919899575955?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
         setIsSellModalOpen(false);
         toast({ title: "Information Sent", description: "Your property details are ready to be sent via WhatsApp.", variant: "default" });
     };
 
+    // Admin Handlers
+    const handleOpenLoginModal = () => setIsLoginModalOpen(true);
+    const handleCloseLoginModal = () => setIsLoginModalOpen(false);
+    const handleLoginSubmit = (email?: string, password?: string) => {
+        if (email === 'admin@gmail.com' && password === 'admin') {
+            setIsAdminLoggedIn(true);
+            setIsLoginModalOpen(false);
+            toast({ title: "Login Successful", description: "Welcome, Admin!", variant: "default" });
+        } else {
+            toast({ title: "Login Failed", description: "Invalid email or password.", variant: "destructive" });
+        }
+    };
+    const handleLogout = () => {
+        setIsAdminLoggedIn(false);
+        toast({ title: "Logged Out", variant: "default" });
+    };
+
+    const handleOpenAddPropertyModal = () => setIsAddPropertyModalOpen(true);
+    const handleCloseAddPropertyModal = () => setIsAddPropertyModalOpen(false);
+    const handleAddPropertySubmit = (newPropertyData: Omit<Property, 'id' | 'imageUrls'> & { imageUrlsText: string }) => {
+        const newProperty: Property = {
+            ...newPropertyData,
+            id: `p${Date.now()}`, // Simple ID generation
+            imageUrls: newPropertyData.imageUrlsText.split(',').map(url => url.trim()).filter(url => url),
+        };
+        setAllProperties(prev => [newProperty, ...prev]);
+        setIsAddPropertyModalOpen(false);
+        toast({ title: "Property Added", description: `${newProperty.name} has been successfully added.`, variant: "default" });
+    };
+    
+    const handleOpenEditPropertyModal = (property: Property) => {
+        setPropertyToEdit(property);
+        setIsEditPropertyModalOpen(true);
+    };
+    const handleCloseEditPropertyModal = () => {
+        setIsEditPropertyModalOpen(false);
+        setPropertyToEdit(null);
+    };
+    const handleEditPropertySubmit = (updatedPropertyData: Property) => {
+        setAllProperties(prev => prev.map(p => p.id === updatedPropertyData.id ? updatedPropertyData : p));
+        setIsEditPropertyModalOpen(false);
+        setPropertyToEdit(null);
+        toast({ title: "Property Updated", description: `${updatedPropertyData.name} has been successfully updated.`, variant: "default" });
+    };
+
+    const handleDeleteProperty = (propertyId: string) => {
+        setAllProperties(prev => prev.filter(p => p.id !== propertyId));
+        toast({ title: "Property Deleted", description: "The property has been removed.", variant: "default" });
+        if (selectedProperty?.id === propertyId) {
+            setSelectedProperty(null); 
+        }
+    };
+
+
     return (
         <div className="min-h-screen bg-background font-body antialiased flex flex-col">
-            <Header onNavigate={handleNavigation} onOpenSellModal={() => setIsSellModalOpen(true)} />
+            <Header 
+                onNavigate={handleNavigation} 
+                onOpenSellModal={() => setIsSellModalOpen(true)}
+                isAdminLoggedIn={isAdminLoggedIn}
+                onLogout={handleLogout}
+            />
             <SellPropertyModal 
                 isOpen={isSellModalOpen} 
                 onClose={() => setIsSellModalOpen(false)} 
                 onSubmit={handleSellSubmit}
             />
+            <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={handleCloseLoginModal}
+                onSubmit={handleLoginSubmit}
+            />
+            <AddPropertyModal
+                isOpen={isAddPropertyModalOpen}
+                onClose={handleCloseAddPropertyModal}
+                onSubmit={handleAddPropertySubmit}
+            />
+            {propertyToEdit && (
+                <EditPropertyModal
+                    isOpen={isEditPropertyModalOpen}
+                    onClose={handleCloseEditPropertyModal}
+                    onSubmit={handleEditPropertySubmit}
+                    property={propertyToEdit}
+                />
+            )}
+
             <main className="flex-grow">
                 {selectedProperty ? (
                     <PropertyDetail property={selectedProperty} onBack={handleBackToListings} />
@@ -122,12 +187,16 @@ Details:
                            onLike={handleLike}
                            likedIds={likedPropertyIds}
                            isLoading={isLoading}
+                           isAdminLoggedIn={isAdminLoggedIn}
+                           onOpenAddPropertyModal={handleOpenAddPropertyModal}
+                           onEditProperty={handleOpenEditPropertyModal}
+                           onDeleteProperty={handleDeleteProperty}
                         />
                         <PropertyInsightsSection properties={filteredProperties} />
                     </section>
                 )}
             </main>
-            <Footer />
+            <Footer onOpenLoginModal={handleOpenLoginModal} />
         </div>
     );
 }

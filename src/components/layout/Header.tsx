@@ -7,15 +7,17 @@ import { Button } from '@/components/ui/button';
 interface HeaderProps {
   onNavigate: (filter: 'buy' | 'rent' | 'favorites') => void;
   onOpenSellModal: () => void;
+  isAdminLoggedIn: boolean;
+  onLogout: () => void;
 }
 
-const Header: FC<HeaderProps> = ({ onNavigate, onOpenSellModal }) => {
+const Header: FC<HeaderProps> = ({ onNavigate, onOpenSellModal, isAdminLoggedIn, onLogout }) => {
   const handleNavClick = (filter: 'buy' | 'rent' | 'favorites') => {
     onNavigate(filter);
   };
 
   const handleLogoClick = () => {
-    onNavigate('buy'); // Navigate to 'buy' filter and reset selected property
+    onNavigate('buy'); 
   };
 
   return (
@@ -28,14 +30,16 @@ const Header: FC<HeaderProps> = ({ onNavigate, onOpenSellModal }) => {
         </button>
         <nav>
           <ul className="flex items-center space-x-2 sm:space-x-4 text-sm sm:text-base font-medium text-foreground/80">
-            <li>
-              <Button
-                onClick={onOpenSellModal}
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-md text-xs sm:text-sm"
-              >
-                Sell
-              </Button>
-            </li>
+            {!isAdminLoggedIn && (
+              <li>
+                <Button
+                  onClick={onOpenSellModal}
+                  className="bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-md text-xs sm:text-sm"
+                >
+                  Sell
+                </Button>
+              </li>
+            )}
             <li>
               <Button variant="ghost" onClick={() => handleNavClick('buy')} className="hover:text-primary transition duration-300 px-2 py-1">
                 Buy
@@ -46,6 +50,13 @@ const Header: FC<HeaderProps> = ({ onNavigate, onOpenSellModal }) => {
                 Rent
               </Button>
             </li>
+             {isAdminLoggedIn && (
+                <li>
+                  <Button variant="outline" onClick={onLogout} className="text-xs sm:text-sm">
+                    Logout
+                  </Button>
+                </li>
+              )}
           </ul>
         </nav>
       </div>
