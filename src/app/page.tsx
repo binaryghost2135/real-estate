@@ -51,19 +51,20 @@ export default function HomePage() {
 
     // Effect to load data from localStorage on component mount (client-side only)
     useEffect(() => {
-        let loadedProperties = mockProperties;
+        let loadedProperties = mockProperties; // Initialize with mockProperties
         let loadedLikedIds: string[] = [];
 
         try {
             const savedPropertiesString = localStorage.getItem(LOCAL_STORAGE_PROPERTIES_KEY);
             if (savedPropertiesString) {
                 const savedProperties = JSON.parse(savedPropertiesString);
-                if (Array.isArray(savedProperties)) {
+                if (Array.isArray(savedProperties) && savedProperties.length > 0) { // Check if array and not empty
                     loadedProperties = savedProperties;
-                } else {
+                } else if (!Array.isArray(savedProperties)) { // If not an array, log error and use defaults
                      console.error("Properties from localStorage was not an array", savedProperties);
                      toast({ title: "Data Error", description: "Could not load saved properties. Using defaults.", variant: "destructive" });
                 }
+                // If savedProperties is an empty array, it will fall through and use mockProperties (or rather, loadedProperties which was initialized to mockProperties)
             }
         } catch (e) {
             console.error("Failed to parse properties from localStorage", e);
