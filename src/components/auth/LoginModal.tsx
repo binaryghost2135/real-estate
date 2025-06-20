@@ -61,7 +61,7 @@ const LoginModal: FC<LoginModalProps> = ({ isOpen, onClose, onSubmit }) => {
                 onChange={(e) => setEmail(e.target.value)} 
                 required 
                 className="col-span-3" 
-                placeholder="admin@example.com" />
+                placeholder="Email Address" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="password" className="text-right col-span-1">
