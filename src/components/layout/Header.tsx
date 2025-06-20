@@ -40,8 +40,6 @@ const Header: FC<HeaderProps> = ({ onNavigate, onOpenSellModal }) => {
                 Rent
               </Button>
             </li>
-            <li><Button variant="ghost" className="hover:text-primary transition duration-300 px-2 py-1">About</Button></li>
-            <li><Button variant="ghost" className="hover:text-primary transition duration-300 px-2 py-1">Contact</Button></li>
           </ul>
         </nav>
       </div>
