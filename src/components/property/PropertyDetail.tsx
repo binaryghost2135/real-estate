@@ -39,7 +39,7 @@ const PropertyDetail: FC<PropertyDetailProps> = ({ property, onBack }) => {
               <div className="relative w-full h-[350px] sm:h-[450px] rounded-lg shadow-md mb-4 overflow-hidden bg-muted">
                 <Image
                   src={currentImageUrl}
-                  alt={`${name} image ${currentImageIndex + 1}`}
+                  alt={`Image ${currentImageIndex + 1} of ${name}`}
                   layout="fill"
                   objectFit="cover"
                   className="transition-opacity duration-300"
@@ -67,7 +67,7 @@ const PropertyDetail: FC<PropertyDetailProps> = ({ property, onBack }) => {
                     <button key={index} onClick={() => setCurrentImageIndex(index)} className={`relative w-24 h-16 rounded-md overflow-hidden border-2 focus:outline-none focus:ring-2 focus:ring-primary ${currentImageIndex === index ? 'border-primary' : 'border-transparent'}`}>
                       <Image 
                         src={url} 
-                        alt={`Thumbnail ${index + 1}`} 
+                        alt={`Thumbnail for image ${index + 1} of ${name}`}
                         layout="fill" 
                         objectFit="cover"
                         data-ai-hint={dataAiHint || 'property thumbnail'}

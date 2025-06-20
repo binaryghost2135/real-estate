@@ -33,7 +33,7 @@ const PropertyCard: FC<PropertyCardProps> = ({ property, onClick, onLike, isLike
       <div className="relative w-full h-52">
         <Image
           src={displayImageUrl}
-          alt={name}
+          alt={`Image of ${name}`}
           layout="fill"
           objectFit="cover"
           className="group-hover:scale-105 transition-transform duration-300"
