@@ -27,14 +27,39 @@ interface EditPropertyModalProps {
   property: Property | null;
 }
 
+// Define a specific type for the form state in EditPropertyModal
+type EditPropertyFormState = Omit<Property, 'id' | 'imageUrls'> & {
+  imageUrlsText: string;
+};
+
 const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubmit, property }) => {
-  const [formState, setFormState] = useState<Property | Partial<Property>>(property || {});
+  // Initialize form state with a defined structure
+  const [formState, setFormState] = useState<EditPropertyFormState>({
+    name: '',
+    type: 'buy',
+    address: '',
+    price: '',
+    bedrooms: 0,
+    bathrooms: 0,
+    area: '',
+    description: '',
+    imageUrlsText: '',
+    dataAiHint: '',
+  });
 
   useEffect(() => {
-    if (property) {
+    if (property && isOpen) {
       setFormState({
-        ...property,
-        imageUrlsText: property.imageUrls.join(', ') // For Textarea input
+        name: property.name,
+        type: property.type,
+        address: property.address,
+        price: property.price,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        area: property.area,
+        description: property.description,
+        imageUrlsText: property.imageUrls.join(', '), // Convert array to comma-separated string
+        dataAiHint: property.dataAiHint || '',
       });
     }
   }, [property, isOpen]);
@@ -43,7 +68,10 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: name === 'bedrooms' || name === 'bathrooms' ? parseInt(value, 10) : value }));
+    setFormState(prev => ({
+      ...prev,
+      [name]: (name === 'bedrooms' || name === 'bathrooms') ? (value === '' ? 0 : parseInt(value, 10)) : value
+    }));
   };
 
   const handleTypeChange = (value: 'buy' | 'rent') => {
@@ -52,11 +80,23 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedProperty = {
-        ...formState,
-        imageUrls: (formState as any).imageUrlsText.split(',').map((url: string) => url.trim()).filter((url: string) => url),
-    } as Property;
-     if (updatedProperty.bedrooms < 0 || updatedProperty.bathrooms < 0) {
+    if (!property) return;
+
+    const updatedProperty: Property = {
+      id: property.id, // Retain the original ID
+      name: formState.name,
+      type: formState.type,
+      address: formState.address,
+      price: formState.price,
+      bedrooms: Number(formState.bedrooms),
+      bathrooms: Number(formState.bathrooms),
+      area: formState.area,
+      description: formState.description,
+      imageUrls: formState.imageUrlsText.split(',').map(url => url.trim()).filter(url => url), // Convert string back to array
+      dataAiHint: formState.dataAiHint,
+    };
+
+    if (updatedProperty.bedrooms < 0 || updatedProperty.bathrooms < 0) {
         alert("Bedrooms and bathrooms cannot be negative.");
         return;
     }
@@ -82,11 +122,11 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-name" className="text-right col-span-1">Name</Label>
-              <Input id="edit-name" name="name" value={formState.name || ''} onChange={handleChange} required className="col-span-3"/>
+              <Input id="edit-name" name="name" value={formState.name} onChange={handleChange} required className="col-span-3"/>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-type" className="text-right col-span-1">Type</Label>
-              <RadioGroup value={formState.type || 'buy'} onValueChange={handleTypeChange} className="col-span-3 flex space-x-4">
+              <RadioGroup value={formState.type} onValueChange={handleTypeChange} className="col-span-3 flex space-x-4">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="buy" id="edit-type-buy" />
                   <Label htmlFor="edit-type-buy">Buy</Label>
@@ -99,35 +139,35 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-address" className="text-right col-span-1">Address</Label>
-              <Input id="edit-address" name="address" value={formState.address || ''} onChange={handleChange} required className="col-span-3"/>
+              <Input id="edit-address" name="address" value={formState.address} onChange={handleChange} required className="col-span-3"/>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-price" className="text-right col-span-1">Price</Label>
-              <Input id="edit-price" name="price" value={formState.price || ''} onChange={handleChange} required className="col-span-3"/>
+              <Input id="edit-price" name="price" value={formState.price} onChange={handleChange} required className="col-span-3"/>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-bedrooms" className="text-right col-span-1">Bedrooms</Label>
-              <Input id="edit-bedrooms" name="bedrooms" type="number" min="0" value={formState.bedrooms || 0} onChange={handleChange} required className="col-span-3"/>
+              <Input id="edit-bedrooms" name="bedrooms" type="number" min="0" value={formState.bedrooms} onChange={handleChange} required className="col-span-3"/>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-bathrooms" className="text-right col-span-1">Bathrooms</Label>
-              <Input id="edit-bathrooms" name="bathrooms" type="number" min="0" value={formState.bathrooms || 0} onChange={handleChange} required className="col-span-3"/>
+              <Input id="edit-bathrooms" name="bathrooms" type="number" min="0" value={formState.bathrooms} onChange={handleChange} required className="col-span-3"/>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-area" className="text-right col-span-1">Area</Label>
-              <Input id="edit-area" name="area" value={formState.area || ''} onChange={handleChange} required className="col-span-3"/>
+              <Input id="edit-area" name="area" value={formState.area} onChange={handleChange} required className="col-span-3"/>
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="edit-description" className="text-right col-span-1 mt-2">Description</Label>
-              <Textarea id="edit-description" name="description" value={formState.description || ''} onChange={handleChange} required className="col-span-3"/>
+              <Textarea id="edit-description" name="description" value={formState.description} onChange={handleChange} required className="col-span-3"/>
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="edit-imageUrlsText" className="text-right col-span-1 mt-2">Image URLs</Label>
-              <Textarea id="edit-imageUrlsText" name="imageUrlsText" value={(formState as any).imageUrlsText || ''} onChange={handleChange} className="col-span-3" placeholder="Comma-separated URLs"/>
+              <Textarea id="edit-imageUrlsText" name="imageUrlsText" value={formState.imageUrlsText} onChange={handleChange} className="col-span-3" placeholder="Comma-separated URLs"/>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-dataAiHint" className="text-right col-span-1">Image Hint</Label>
-              <Input id="edit-dataAiHint" name="dataAiHint" value={formState.dataAiHint || ''} onChange={handleChange} className="col-span-3" placeholder="e.g., modern apartment"/>
+              <Input id="edit-dataAiHint" name="dataAiHint" value={formState.dataAiHint} onChange={handleChange} className="col-span-3" placeholder="e.g., modern apartment (max 2 words)"/>
             </div>
           </div>
           <DialogFooter className="mt-4">
@@ -141,4 +181,3 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
 };
 
 export default EditPropertyModal;
-
