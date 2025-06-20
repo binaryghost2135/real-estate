@@ -47,7 +47,7 @@ const PropertyCard: FC<PropertyCardProps> = ({ property, onClick, onLike, isLike
         <Image
           src={displayImageUrl}
           alt={`Image of ${name}`}
-          layout="fill"
+          fill={true}
           objectFit="cover"
           className="group-hover:scale-105 transition-transform duration-300"
           data-ai-hint={dataAiHint || 'property image'}
