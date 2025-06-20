@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, MapPin, BedDouble, Bath, Square as SquareIcon } from 'lucide-react';
-import type { Property } from '@/types'; // Updated import
+import type { Property } from '@/types'; 
 
 interface PropertyDetailProps {
   property: Property | null;
@@ -25,6 +25,12 @@ const PropertyDetail: FC<PropertyDetailProps> = ({ property, onBack }) => {
   const goToPrev = () => setCurrentImageIndex(i => (i - 1 + imageUrls.length) % imageUrls.length);
 
   const currentImageUrl = imageUrls[currentImageIndex] || `https://placehold.co/800x600.png`;
+
+  const handleContactAgent = () => {
+    const message = `Hi, I'm interested in the property '${name}' listed at '${price}'. Please provide more details.`;
+    const whatsappUrl = `https://wa.me/91999575955?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   return (
     <section className="container mx-auto p-4 py-8 animate-fade-in">
@@ -44,7 +50,7 @@ const PropertyDetail: FC<PropertyDetailProps> = ({ property, onBack }) => {
                   objectFit="cover"
                   className="transition-opacity duration-300"
                   data-ai-hint={dataAiHint || 'property interior'}
-                  priority={true} // Mark main image as priority
+                  priority={true} 
                    onError={(e) => {
                     (e.target as HTMLImageElement).src = `https://placehold.co/800x600.png`;
                     (e.target as HTMLImageElement).srcset = "";
@@ -83,7 +89,7 @@ const PropertyDetail: FC<PropertyDetailProps> = ({ property, onBack }) => {
             </div>
             
             <div className="lg:col-span-1">
-              <h2 className="text-3xl font-extrabold text-card-foreground mb-2 font-headline">{name}</h2>
+              <h1 className="text-3xl font-extrabold text-card-foreground mb-2 font-headline">{name}</h1>
               <p className="text-primary font-bold text-3xl mb-4">{price}</p>
               <Card className="bg-muted/50 p-4 rounded-lg shadow-inner border mb-6">
                 <CardHeader className="p-0 pb-3">
@@ -98,9 +104,12 @@ const PropertyDetail: FC<PropertyDetailProps> = ({ property, onBack }) => {
                   </ul>
                 </CardContent>
               </Card>
-              <h3 className="text-xl font-bold text-card-foreground mb-2 font-headline">Description</h3>
+              <h2 className="text-xl font-bold text-card-foreground mb-2 font-headline">Description</h2>
               <p className="text-foreground/80 text-base mb-6 leading-relaxed">{description}</p>
-              <Button className="w-full text-lg py-3 transform hover:scale-105 transition-all duration-300">
+              <Button 
+                onClick={handleContactAgent}
+                className="w-full text-lg py-3 transform hover:scale-105 transition-all duration-300"
+              >
                 Contact Agent
               </Button>
             </div>
