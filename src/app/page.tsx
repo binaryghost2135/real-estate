@@ -38,7 +38,7 @@ export default function HomePage() {
     const [filterType, setFilterType] = useState<'buy' | 'rent' | 'favorites'>('buy');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-    const [isLoading, setIsLoading] = useState(true); // Start true to handle hydration
+    const [isLoading, setIsLoading] = useState(true); 
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
     
 
@@ -51,52 +51,48 @@ export default function HomePage() {
 
     // Effect to load data from localStorage on component mount (client-side only)
     useEffect(() => {
-        // This effect runs only on the client, after initial hydration
-        let loadedProperties = mockProperties; // Default to mock
-        let loadedLikedIds: string[] = [];   // Default to empty
+        let loadedProperties = mockProperties;
+        let loadedLikedIds: string[] = [];
 
-        if (typeof window !== 'undefined') {
+        try {
             const savedPropertiesString = localStorage.getItem(LOCAL_STORAGE_PROPERTIES_KEY);
             if (savedPropertiesString) {
-                try {
-                    const savedProperties = JSON.parse(savedPropertiesString);
-                    if (Array.isArray(savedProperties)) { // Basic validation
-                        loadedProperties = savedProperties;
-                    } else {
-                         console.error("Properties from localStorage was not an array", savedProperties);
-                         toast({ title: "Data Error", description: "Could not load saved properties. Using defaults.", variant: "destructive" });
-                    }
-                } catch (e) {
-                    console.error("Failed to parse properties from localStorage", e);
-                    toast({ title: "Data Error", description: "Could not load saved properties. Using defaults.", variant: "destructive" });
+                const savedProperties = JSON.parse(savedPropertiesString);
+                if (Array.isArray(savedProperties)) {
+                    loadedProperties = savedProperties;
+                } else {
+                     console.error("Properties from localStorage was not an array", savedProperties);
+                     toast({ title: "Data Error", description: "Could not load saved properties. Using defaults.", variant: "destructive" });
                 }
             }
+        } catch (e) {
+            console.error("Failed to parse properties from localStorage", e);
+            toast({ title: "Data Error", description: "Could not load saved properties. Using defaults.", variant: "destructive" });
+        }
 
+        try {
             const savedLikedIdsString = localStorage.getItem(LOCAL_STORAGE_LIKED_IDS_KEY);
             if (savedLikedIdsString) {
-                try {
-                    const savedLikedIds = JSON.parse(savedLikedIdsString);
-                     if (Array.isArray(savedLikedIds)) { // Basic validation
-                        loadedLikedIds = savedLikedIds;
-                    } else {
-                        console.error("Liked IDs from localStorage was not an array", savedLikedIds);
-                    }
-                } catch (e) {
-                    console.error("Failed to parse liked IDs from localStorage", e);
+                const savedLikedIds = JSON.parse(savedLikedIdsString);
+                 if (Array.isArray(savedLikedIds)) {
+                    loadedLikedIds = savedLikedIds;
+                } else {
+                    console.error("Liked IDs from localStorage was not an array", savedLikedIds);
                 }
             }
+        } catch (e) {
+            console.error("Failed to parse liked IDs from localStorage", e);
         }
         
         setAllProperties(loadedProperties);
         setLikedPropertyIds(loadedLikedIds);
-        setIsLoading(false); // Data loaded (or defaulted), set loading to false
+        setIsLoading(false); 
     }, [toast]);
 
 
     // Effect to save allProperties to localStorage
     useEffect(() => {
-        // Only save if not loading initially, to prevent overwriting with mock data before localStorage is checked
-        if (!isLoading && typeof window !== 'undefined') {
+        if (!isLoading) { // Only save if not loading initially
             try {
                 localStorage.setItem(LOCAL_STORAGE_PROPERTIES_KEY, JSON.stringify(allProperties));
             } catch (error) {
@@ -113,7 +109,7 @@ export default function HomePage() {
 
     // Effect to save likedPropertyIds to localStorage
     useEffect(() => {
-        if (!isLoading && typeof window !== 'undefined') {
+        if (!isLoading) { // Only save if not loading initially
             localStorage.setItem(LOCAL_STORAGE_LIKED_IDS_KEY, JSON.stringify(likedPropertyIds));
         }
     }, [likedPropertyIds, isLoading]);
@@ -178,7 +174,7 @@ export default function HomePage() {
     const handleAddPropertySubmit = (newPropertyData: Omit<Property, 'id'>) => {
         const newProperty: Property = {
             ...newPropertyData,
-            id: `p${Date.now()}`, // Simple ID generation
+            id: `p${Date.now()}`, 
         };
         setAllProperties(prev => [newProperty, ...prev]);
         setIsAddPropertyModalOpen(false);
