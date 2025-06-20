@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from 'react';
@@ -22,6 +23,14 @@ const Header: FC<HeaderProps> = ({ onNavigate, onOpenSellModal }) => {
         <nav>
           <ul className="flex items-center space-x-2 sm:space-x-4 text-sm sm:text-base font-medium text-foreground/80">
             <li>
+              <Button
+                onClick={onOpenSellModal}
+                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-md text-xs sm:text-sm"
+              >
+                Sell
+              </Button>
+            </li>
+            <li>
               <Button variant="ghost" onClick={() => handleNavClick('buy')} className="hover:text-primary transition duration-300 px-2 py-1">
                 Buy
               </Button>
@@ -29,14 +38,6 @@ const Header: FC<HeaderProps> = ({ onNavigate, onOpenSellModal }) => {
             <li>
               <Button variant="ghost" onClick={() => handleNavClick('rent')} className="hover:text-primary transition duration-300 px-2 py-1">
                 Rent
-              </Button>
-            </li>
-            <li>
-              <Button 
-                onClick={onOpenSellModal} 
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition-all duration-300 transform hover:scale-105 shadow-md text-xs sm:text-sm"
-              >
-                Sell
               </Button>
             </li>
             <li><Button variant="ghost" className="hover:text-primary transition duration-300 px-2 py-1">About</Button></li>
