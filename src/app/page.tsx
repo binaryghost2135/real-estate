@@ -60,7 +60,7 @@ export default function HomePage() {
                 const savedProperties = JSON.parse(savedPropertiesString);
                 if (Array.isArray(savedProperties) && savedProperties.length > 0) {
                     loadedProperties = savedProperties;
-                } else if (!Array.isArray(savedProperties) && savedPropertiesString !== "[]") { // Allow empty array from storage
+                } else if (!Array.isArray(savedProperties) && savedPropertiesString !== "[]") { 
                      console.error("Properties from localStorage was not an array or was malformed", savedProperties);
                      toast({ title: "Data Error", description: "Could not load saved properties. Using defaults.", variant: "destructive" });
                 }
@@ -76,7 +76,7 @@ export default function HomePage() {
                 const savedLikedIds = JSON.parse(savedLikedIdsString);
                  if (Array.isArray(savedLikedIds)) {
                     loadedLikedIds = savedLikedIds;
-                } else if (savedLikedIdsString !== "[]") { // Allow empty array from storage
+                } else if (savedLikedIdsString !== "[]") { 
                     console.error("Liked IDs from localStorage was not an array or was malformed", savedLikedIds);
                 }
             }
