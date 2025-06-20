@@ -41,12 +41,12 @@ const Header: FC<HeaderProps> = ({ onNavigate, onOpenSellModal, isAdminLoggedIn,
               </li>
             )}
             <li>
-              <Button variant="ghost" onClick={() => handleNavClick('buy')} className="hover:text-primary transition duration-300 px-2 py-1">
+              <Button variant="ghost" onClick={() => handleNavClick('buy')} className="hover:bg-accent hover:text-accent-foreground transition duration-300 px-2 py-1">
                 Buy
               </Button>
             </li>
             <li>
-              <Button variant="ghost" onClick={() => handleNavClick('rent')} className="hover:text-primary transition duration-300 px-2 py-1">
+              <Button variant="ghost" onClick={() => handleNavClick('rent')} className="hover:bg-accent hover:text-accent-foreground transition duration-300 px-2 py-1">
                 Rent
               </Button>
             </li>
