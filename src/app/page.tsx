@@ -32,13 +32,13 @@ const LOCAL_STORAGE_LIKED_IDS_KEY = 'homeFindKandivaliLikedIds';
 export default function HomePage() {
     const { toast } = useToast();
 
-    const [allProperties, setAllProperties] = useState<Property[]>(mockProperties);
-    const [likedPropertyIds, setLikedPropertyIds] = useState<string[]>([]);
+    const [allProperties, setAllProperties] = useState<Property[]>(mockProperties); // Initialize with mockProperties
+    const [likedPropertyIds, setLikedPropertyIds] = useState<string[]>([]); // Initialize empty
     
     const [filterType, setFilterType] = useState<'buy' | 'rent' | 'favorites'>('buy');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-    const [isLoading, setIsLoading] = useState(true); 
+    const [isLoading, setIsLoading] = useState(true);  // Start as true
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
     
 
@@ -51,20 +51,19 @@ export default function HomePage() {
 
     // Effect to load data from localStorage on component mount (client-side only)
     useEffect(() => {
-        let loadedProperties = mockProperties; // Initialize with mockProperties
+        let loadedProperties = mockProperties; 
         let loadedLikedIds: string[] = [];
 
         try {
             const savedPropertiesString = localStorage.getItem(LOCAL_STORAGE_PROPERTIES_KEY);
             if (savedPropertiesString) {
                 const savedProperties = JSON.parse(savedPropertiesString);
-                if (Array.isArray(savedProperties) && savedProperties.length > 0) { // Check if array and not empty
+                if (Array.isArray(savedProperties) && savedProperties.length > 0) {
                     loadedProperties = savedProperties;
-                } else if (!Array.isArray(savedProperties)) { // If not an array, log error and use defaults
+                } else if (!Array.isArray(savedProperties)) {
                      console.error("Properties from localStorage was not an array", savedProperties);
                      toast({ title: "Data Error", description: "Could not load saved properties. Using defaults.", variant: "destructive" });
                 }
-                // If savedProperties is an empty array, it will fall through and use mockProperties (or rather, loadedProperties which was initialized to mockProperties)
             }
         } catch (e) {
             console.error("Failed to parse properties from localStorage", e);
@@ -93,7 +92,7 @@ export default function HomePage() {
 
     // Effect to save allProperties to localStorage
     useEffect(() => {
-        if (!isLoading) { // Only save if not loading initially
+        if (!isLoading) { 
             try {
                 localStorage.setItem(LOCAL_STORAGE_PROPERTIES_KEY, JSON.stringify(allProperties));
             } catch (error) {
@@ -110,7 +109,7 @@ export default function HomePage() {
 
     // Effect to save likedPropertyIds to localStorage
     useEffect(() => {
-        if (!isLoading) { // Only save if not loading initially
+        if (!isLoading) { 
             localStorage.setItem(LOCAL_STORAGE_LIKED_IDS_KEY, JSON.stringify(likedPropertyIds));
         }
     }, [likedPropertyIds, isLoading]);
