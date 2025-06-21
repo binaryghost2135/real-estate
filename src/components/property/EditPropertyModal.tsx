@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { X } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import type { Property } from '@/types';
 
 interface EditPropertyModalProps {
@@ -27,12 +27,10 @@ interface EditPropertyModalProps {
   property: Property | null;
 }
 
-type EditPropertyFormState = Omit<Property, 'id' | 'imageUrls'> & { imageUrls: string };
-
 const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubmit, property }) => {
-  const [formState, setFormState] = useState<EditPropertyFormState>({
+  const [formState, setFormState] = useState({
     name: '',
-    type: 'buy',
+    type: 'buy' as 'buy' | 'rent',
     address: '',
     price: '',
     bedrooms: 0,
@@ -40,7 +38,7 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
     area: '',
     description: '',
     dataAiHint: '',
-    imageUrls: '',
+    imageUrls: [''],
   });
 
   useEffect(() => {
@@ -55,7 +53,7 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
         area: property.area,
         description: property.description,
         dataAiHint: property.dataAiHint || '',
-        imageUrls: property.imageUrls.join(', '),
+        imageUrls: property.imageUrls.length > 0 ? [...property.imageUrls] : [''],
       });
     }
   }, [property, isOpen]);
@@ -74,7 +72,23 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
     setFormState(prev => ({ ...prev, type: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleImageUrlChange = (index: number, value: string) => {
+    const newImageUrls = [...formState.imageUrls];
+    newImageUrls[index] = value;
+    setFormState(prev => ({ ...prev, imageUrls: newImageUrls }));
+  };
+
+  const handleAddImageUrl = () => {
+    setFormState(prev => ({ ...prev, imageUrls: [...prev.imageUrls, ''] }));
+  };
+
+  const handleRemoveImageUrl = (index: number) => {
+    if (formState.imageUrls.length <= 1) return;
+    const newImageUrls = formState.imageUrls.filter((_, i) => i !== index);
+    setFormState(prev => ({ ...prev, imageUrls: newImageUrls }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!property) return;
 
@@ -83,13 +97,11 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
         return;
     }
 
-    const finalImageUrls = formState.imageUrls.split(',').map(url => url.trim()).filter(url => url);
-
-    const { imageUrls: _, ...restOfForm } = formState;
+    const finalImageUrls = formState.imageUrls.map(url => url.trim()).filter(url => url);
 
     const updatedProperty: Property = {
       ...property,
-      ...restOfForm,
+      ...formState,
       bedrooms: Number(formState.bedrooms),
       bathrooms: Number(formState.bathrooms),
       imageUrls: finalImageUrls,
@@ -164,16 +176,40 @@ const EditPropertyModal: FC<EditPropertyModalProps> = ({ isOpen, onClose, onSubm
             </div>
             
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="edit-imageUrls" className="text-right col-span-1 mt-2">Image URLs</Label>
-              <Textarea
-                  id="edit-imageUrls"
-                  name="imageUrls"
-                  value={formState.imageUrls}
-                  onChange={handleChange}
-                  className="col-span-3"
-                  placeholder="Enter image URLs, separated by commas"
-                  rows={4}
-              />
+              <Label className="text-right col-span-1 mt-2">Image URLs</Label>
+              <div className="col-span-3 space-y-2">
+                {formState.imageUrls.map((url, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      id={`edit-imageUrl-${index}`}
+                      value={url}
+                      onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                      placeholder="https://example.com/image.png"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleRemoveImageUrl(index)}
+                      disabled={formState.imageUrls.length <= 1}
+                      className="h-9 w-9 flex-shrink-0"
+                      aria-label="Remove image URL"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddImageUrl}
+                  className="mt-2"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add URL
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">

@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { X } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import type { Property } from '@/types';
 
 interface AddPropertyModalProps {
@@ -26,7 +26,7 @@ interface AddPropertyModalProps {
   onSubmit: (details: Omit<Property, 'id'>) => void;
 }
 
-const initialFormState: Omit<Property, 'id' | 'imageUrls'> & { imageUrls: string; dataAiHint: string } = {
+const initialFormState: Omit<Property, 'id'> = {
   name: '',
   type: 'buy' as 'buy' | 'rent',
   address: '',
@@ -35,7 +35,7 @@ const initialFormState: Omit<Property, 'id' | 'imageUrls'> & { imageUrls: string
   bathrooms: 1,
   area: '',
   description: '',
-  imageUrls: '',
+  imageUrls: [''],
   dataAiHint: '',
 };
 
@@ -51,6 +51,22 @@ const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit
     setFormState(prev => ({ ...prev, type: value }));
   };
 
+  const handleImageUrlChange = (index: number, value: string) => {
+    const newImageUrls = [...formState.imageUrls];
+    newImageUrls[index] = value;
+    setFormState(prev => ({ ...prev, imageUrls: newImageUrls }));
+  };
+
+  const handleAddImageUrl = () => {
+    setFormState(prev => ({ ...prev, imageUrls: [...prev.imageUrls, ''] }));
+  };
+
+  const handleRemoveImageUrl = (index: number) => {
+    if (formState.imageUrls.length <= 1) return;
+    const newImageUrls = formState.imageUrls.filter((_, i) => i !== index);
+    setFormState(prev => ({ ...prev, imageUrls: newImageUrls }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formState.bedrooms < 0 || formState.bathrooms < 0) {
@@ -58,10 +74,8 @@ const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit
         return;
     }
 
-    const imageUrls = formState.imageUrls.split(',').map(url => url.trim()).filter(url => url);
-    const { imageUrls: _, ...restOfForm } = formState; // exclude the string version
-
-    onSubmit({ ...restOfForm, imageUrls });
+    const imageUrls = formState.imageUrls.map(url => url.trim()).filter(url => url);
+    onSubmit({ ...formState, imageUrls });
     setFormState(initialFormState); // Reset form
   };
 
@@ -129,15 +143,40 @@ const AddPropertyModal: FC<AddPropertyModalProps> = ({ isOpen, onClose, onSubmit
               <Textarea id="description" name="description" value={formState.description} onChange={handleChange} required className="col-span-3" placeholder="Property description..." />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="imageUrls" className="text-right col-span-1 mt-2">Image URLs</Label>
-              <Textarea
-                id="imageUrls"
-                name="imageUrls"
-                value={formState.imageUrls}
-                onChange={handleChange}
-                className="col-span-3"
-                placeholder="Enter image URLs, separated by commas"
-              />
+              <Label className="text-right col-span-1 mt-2">Image URLs</Label>
+              <div className="col-span-3 space-y-2">
+                {formState.imageUrls.map((url, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      id={`imageUrl-${index}`}
+                      value={url}
+                      onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                      placeholder="https://example.com/image.png"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleRemoveImageUrl(index)}
+                      disabled={formState.imageUrls.length <= 1}
+                      className="h-9 w-9 flex-shrink-0"
+                      aria-label="Remove image URL"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddImageUrl}
+                  className="mt-2"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add URL
+                </Button>
+              </div>
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="dataAiHint" className="text-right col-span-1">Image Hint</Label>
